@@ -76,22 +76,35 @@ class WeatherDashboard:
             print(f"Error saving to S3: {e}")
             return False
 
-def lambda_handler(event, context):
+def main():
     dashboard = WeatherDashboard()
+    
+    # Create bucket if needed
     dashboard.create_bucket_if_not_exists()
+    
     cities = ["Philadelphia", "Seattle", "New York", "Texas", "Arizona", "Montana"]
     
     for city in cities:
         print(f"\nFetching weather for {city}...")
         weather_data = dashboard.fetch_weather(city)
         if weather_data:
-            simplified_data = {
-                "city": city,
-                "temperature": weather_data['main']['temp'],
-                "feels_like": weather_data['main']['feels_like'],
-                "humidity": weather_data['main']['humidity'],
-                "conditions": weather_data['weather'][0]['description'],
-                "timestamp": datetime.now().strftime('%Y-%m-%d %H:%M:%S')
-            }
-            dashboard.save_to_s3(simplified_data) 
+            temp = weather_data['main']['temp']
+            feels_like = weather_data['main']['feels_like']
+            humidity = weather_data['main']['humidity']
+            description = weather_data['weather'][0]['description']
+            
+            print(f"Temperature: {temp}°F")
+            print(f"Feels like: {feels_like}°F")
+            print(f"Humidity: {humidity}%")
+            print(f"Conditions: {description}")
+            
+            # Save to S3
+            success = dashboard.save_to_s3(weather_data, city)
+            if success:
+                print(f"Weather data for {city} saved to S3!")
+        else:
+            print(f"Failed to fetch weather data for {city}")
+
+if __name__ == "__main__":
+    main()
 
